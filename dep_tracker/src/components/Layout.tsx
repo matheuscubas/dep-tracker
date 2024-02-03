@@ -20,7 +20,9 @@ export default function Layout({ children }: PropsWithChildren) {
       {/* header */}
 
       {/* body */}
-      <div className="place-self-center mt-2">{children}</div>
+      <div className="place-self-center mt-2 bg-gray-900 text-gray-400">
+        {children}
+      </div>
       {/* body */}
     </div>
   );
