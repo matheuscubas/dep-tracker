@@ -11,14 +11,19 @@ import {
 } from "@/components/ui/card";
 import { UploadInput } from "./UploadInput";
 
+interface packageJson {
+  dependencies: Record<string, string>;
+  devDependencies: Record<string, string>;
+}
+
 export default function MainForm() {
   const mainFormSchema = Yup.object().shape({
-    file: Yup.mixed()
+    file: Yup.mixed<File>()
       .required("File is required!")
       .test({
         message: "Invalid format",
         test: (file, context) => {
-          const extension = file.toString().split(".").pop();
+          const extension = file.name.toString().split(".").pop();
           const isValid = extension === "json";
           if (!isValid) context?.createError();
           return isValid;
@@ -28,11 +33,27 @@ export default function MainForm() {
 
   const formik = useFormik({
     initialValues: {
-      file: "",
+      file: undefined,
     },
     validationSchema: mainFormSchema,
-    onSubmit: (values) => {
-      console.log(values);
+    onSubmit: ({ file }) => {
+      const reader = new FileReader();
+      if (!file) return;
+      reader.onload = (e) => {
+        if (!e.target?.result) return;
+
+        const packageJson = e.target.result as string;
+        const { dependencies, devDependencies }: packageJson =
+          JSON.parse(packageJson);
+
+        const projectDependencies = {
+          ...dependencies,
+          ...devDependencies,
+        };
+
+        console.log(projectDependencies);
+      };
+      reader.readAsText(file, "UTF-8");
     },
   });
 
@@ -54,7 +75,11 @@ export default function MainForm() {
             />
           </CardContent>
           <CardFooter className="flex justify-end">
-            <Button disabled={formik.isSubmitting} type="submit">
+            <Button
+              disabled={formik.isSubmitting}
+              type="submit"
+              onClick={formik.submitForm}
+            >
               Analyze
             </Button>
           </CardFooter>
