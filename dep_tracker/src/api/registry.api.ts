@@ -1,6 +1,6 @@
 import { Dependencies } from '../components/MainForm';
 
-export interface RegisteryApiResponse {
+export interface RegistryApiResponse {
     name:                    string;
     version:                 string;
     type:                    string;
@@ -78,28 +78,18 @@ export interface Scripts {
     postinstall: string;
 }
 
-export class Convert {
-    public static toRegisteryApiResponse(json: string): RegisteryApiResponse {
-        return JSON.parse(json);
-    }
-
-    public static RegisteryApiResponseToJson(value: RegisteryApiResponse): string {
-        return JSON.stringify(value);
-    }
-}
-
-export interface dependency {
+export interface Dependency {
   name: string,
   version: string;
 }
 
-export async function getDependenciesWithVersion(dependencies: Dependencies) {
+export async function getDependenciesWithVersion(dependencies: Dependencies): Promise<Array<Dependency>> {
   const packages: Array<string> = Object.keys(dependencies);
-  const packagesWithVersion: Array<dependency> = []
+  const packagesWithVersion: Array<Dependency> = []
   
   for (const package_name of packages) {
-    const response: RegisteryApiResponse = await getPackageInfo(package_name)
-    const filteredResult: dependency = { name: response.name, version: response.version }
+    const response: RegistryApiResponse = await getPackageInfo(package_name)
+    const filteredResult: Dependency = { name: response.name, version: response.version }
     packagesWithVersion.push(filteredResult)
   }
 
@@ -108,7 +98,7 @@ export async function getDependenciesWithVersion(dependencies: Dependencies) {
   return packagesWithVersion;
 }
 
-export async function getPackageInfo(package_name:string) {
+export async function getPackageInfo(package_name:string): Promise<RegistryApiResponse> {
   const url: string = `https://registry.npmjs.org/${package_name}/latest`
   return fetch(url)
     .then(value => value.json());

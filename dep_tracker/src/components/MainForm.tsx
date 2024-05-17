@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { UploadInput } from "./UploadInput";
-import { getDependenciesWithVersion } from "../api/registery_api";
+import { getDependenciesWithVersion } from "../api/registry.api";
 
 interface packageJson {
   dependencies: Record<string, string>;
