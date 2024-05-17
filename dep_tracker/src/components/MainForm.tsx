@@ -10,10 +10,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { UploadInput } from "./UploadInput";
+import { getDependenciesWithVersion } from "../api/registery_api";
 
 interface packageJson {
   dependencies: Record<string, string>;
   devDependencies: Record<string, string>;
+}
+
+export interface Dependencies {
+  [key: string]: string;
 }
 
 export default function MainForm() {
@@ -46,12 +51,12 @@ export default function MainForm() {
         const { dependencies, devDependencies }: packageJson =
           JSON.parse(packageJson);
 
-        const projectDependencies = {
+        const projectDependencies: Dependencies = {
           ...dependencies,
           ...devDependencies,
         };
 
-        console.log(projectDependencies);
+        getDependenciesWithVersion(projectDependencies);
       };
       reader.readAsText(file, "UTF-8");
     },
