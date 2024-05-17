@@ -17,7 +17,6 @@ export function UploadInput({ label, name, description }: UploadInputProps) {
     if (!e.target.files) return;
 
     const file = Array.from(e.target.files)[0];
-    console.log(file);
 
     helpers.setValue(file);
   };
