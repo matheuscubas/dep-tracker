@@ -74,3 +74,7 @@
     @apply bg-background text-foreground;
   }
 }
+
+.bg-green-700 {
+  background-color: rgb(21 128 61);
+}
