@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { UploadInput } from "./UploadInput";
-import { getDependenciesWithVersion } from "../api/registry.api";
+import { Dependency, getDependenciesWithVersion } from "../api/registry.api";
 
 interface packageJson {
   dependencies: Record<string, string>;
@@ -44,7 +44,7 @@ export default function MainForm() {
     onSubmit: ({ file }) => {
       const reader = new FileReader();
       if (!file) return;
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         if (!e.target?.result) return;
 
         const packageJson = e.target.result as string;
@@ -56,7 +56,20 @@ export default function MainForm() {
           ...devDependencies,
         };
 
-        getDependenciesWithVersion(projectDependencies);
+        try {
+          const dependencies: Array<Dependency> =
+            await getDependenciesWithVersion(projectDependencies);
+          console.log(dependencies);
+        } catch (error: unknown) {
+          if (error instanceof Response) {
+            console.log(
+              `${error.url
+                .replace("https://registry.npmjs.org/", "")
+                .replace("/latest", "")}:`,
+              await error.json()
+            );
+          }
+        }
       };
       reader.readAsText(file, "UTF-8");
     },
