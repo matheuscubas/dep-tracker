@@ -92,14 +92,20 @@ export async function getDependenciesWithVersion(dependencies: Dependencies): Pr
     const filteredResult: Dependency = { name: response.name, version: response.version }
     packagesWithVersion.push(filteredResult)
   }
-
-  console.log(packagesWithVersion);
   
   return packagesWithVersion;
 }
 
 export async function getPackageInfo(package_name:string): Promise<RegistryApiResponse> {
   const url: string = `https://registry.npmjs.org/${package_name}/latest`
-  return fetch(url)
-    .then(value => value.json());
+  const response = await fetch(url)
+    .then(response => {
+      if (!response.ok) {
+        throw response
+      }
+
+      return response.json()
+    });
+
+  return response;
 }
