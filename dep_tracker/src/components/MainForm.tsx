@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/card";
 import { UploadInput } from "./UploadInput";
 import { Dependency, getDependenciesWithVersion } from "../api/registry.api";
+import { Fragment, useState } from "react";
+import Table from "./Table";
 
 interface packageJson {
   dependencies: Record<string, string>;
@@ -22,6 +24,10 @@ export interface Dependencies {
 }
 
 export default function MainForm() {
+  const [tableData, setTableData] = useState<Array<Dependency>>([]);
+  const hasTable: boolean = tableData.length > 0;
+  console.log("hasTable", tableData.length > 0);
+
   const mainFormSchema = Yup.object().shape({
     file: Yup.mixed<File>()
       .required("File is required!")
@@ -57,9 +63,11 @@ export default function MainForm() {
         };
 
         try {
-          const dependencies: Array<Dependency> =
-            await getDependenciesWithVersion(projectDependencies);
-          console.log(dependencies);
+          const result: Array<Dependency> = await getDependenciesWithVersion(
+            projectDependencies
+          );
+
+          setTableData(result);
         } catch (error: unknown) {
           if (error instanceof Response) {
             console.log(
@@ -69,6 +77,10 @@ export default function MainForm() {
               await error.json()
             );
           }
+
+          if (error instanceof TypeError) {
+            console.log(error);
+          }
         }
       };
       reader.readAsText(file, "UTF-8");
@@ -76,33 +88,39 @@ export default function MainForm() {
   });
 
   return (
-    <Card className="md:w-[700px] bg-green-700 text-gray-900 md:ml-[500px] mt-10 ">
-      <CardHeader>
-        <CardTitle>Upload your package.json file</CardTitle>
-        <CardDescription className="text-gray-900">
-          this will check your dependencies!
-        </CardDescription>
-      </CardHeader>
-      <FormikProvider value={formik}>
-        <form onSubmit={formik.handleSubmit}>
-          <CardContent>
-            <UploadInput
-              label="Package"
-              name="file"
-              description="Upload your package.json file to analyze your dependencies"
-            />
-          </CardContent>
-          <CardFooter className="flex justify-end">
-            <Button
-              disabled={formik.isSubmitting}
-              type="submit"
-              onClick={formik.submitForm}
-            >
-              Analyze
-            </Button>
-          </CardFooter>
-        </form>
-      </FormikProvider>
-    </Card>
+    <Fragment>
+      {hasTable ? (
+        <Table tableData={tableData} />
+      ) : (
+        <Card className="md:w-[700px] bg-green-700 text-gray-900 py-10">
+          <CardHeader>
+            <CardTitle>Upload your package.json file</CardTitle>
+            <CardDescription className="text-gray-900">
+              this will check your dependencies!
+            </CardDescription>
+          </CardHeader>
+          <FormikProvider value={formik}>
+            <form onSubmit={formik.handleSubmit}>
+              <CardContent>
+                <UploadInput
+                  label="Package"
+                  name="file"
+                  description="Upload your package.json file to analyze your dependencies"
+                />
+              </CardContent>
+              <CardFooter className="flex justify-end">
+                <Button
+                  disabled={formik.isSubmitting}
+                  type="submit"
+                  onClick={formik.submitForm}
+                >
+                  Analyze
+                </Button>
+              </CardFooter>
+            </form>
+          </FormikProvider>
+        </Card>
+      )}
+    </Fragment>
   );
 }
