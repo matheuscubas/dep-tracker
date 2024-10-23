@@ -1,6 +1,6 @@
-import { FormikProvider, useFormik } from "formik";
+import {FormikProvider, useFormik} from "formik";
 import * as Yup from "yup";
-import { Button } from "@/components/ui/button";
+import {Button} from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -9,10 +9,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { UploadInput } from "./UploadInput";
-import { Dependency, getDependenciesWithVersion } from "../api/registry.api";
-import { Fragment, useState } from "react";
+import {UploadInput} from "./UploadInput";
+import {Dependency, getDependenciesWithVersion} from "../api/registry.api";
+import {Fragment, useState} from "react";
 import Table from "./Table";
+import Gallery from "@/components/Gallery.tsx";
 
 interface packageJson {
   dependencies: Record<string, string>;
@@ -26,7 +27,6 @@ export interface Dependencies {
 export default function MainForm() {
   const [tableData, setTableData] = useState<Array<Dependency>>([]);
   const hasTable: boolean = tableData.length > 0;
-  console.log("hasTable", tableData.length > 0);
 
   const mainFormSchema = Yup.object().shape({
     file: Yup.mixed<File>()
@@ -37,6 +37,7 @@ export default function MainForm() {
           const extension = file.name.toString().split(".").pop();
           const isValid = extension === "json";
           if (!isValid) context?.createError();
+
           return isValid;
         },
       }),
@@ -47,14 +48,14 @@ export default function MainForm() {
       file: undefined,
     },
     validationSchema: mainFormSchema,
-    onSubmit: ({ file }) => {
+    onSubmit: ({file}) => {
       const reader = new FileReader();
       if (!file) return;
       reader.onload = async (e) => {
         if (!e.target?.result) return;
 
         const packageJson = e.target.result as string;
-        const { dependencies, devDependencies }: packageJson =
+        const {dependencies, devDependencies}: packageJson =
           JSON.parse(packageJson);
 
         const projectDependencies: Dependencies = {
@@ -90,7 +91,8 @@ export default function MainForm() {
   return (
     <Fragment>
       {hasTable ? (
-        <Table tableData={tableData} />
+        // <Table tableData={tableData}/>
+        <Gallery galleryData={tableData}/>
       ) : (
         <Card className="md:w-[700px] bg-green-700 text-gray-900 py-10">
           <CardHeader>

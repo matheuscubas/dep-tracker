@@ -1,6 +1,6 @@
-import { PropsWithChildren } from "react";
+import {PropsWithChildren} from "react";
 
-export default function Layout({ children }: PropsWithChildren) {
+export default function Layout({children}: PropsWithChildren) {
   return (
     <div className="container m-0 p-0 w-screen h-screen text-gray-300 font-sans flex flex-col">
       {/* header */}
@@ -13,7 +13,7 @@ export default function Layout({ children }: PropsWithChildren) {
             Tracker™
           </h1>
           <p className="text-center text-gray-900 font-extrabold">
-            quickly identify all upgradables from your dependencies!
+            quickly identify all upgradable dependencies from your project!
           </p>
         </div>
       </div>

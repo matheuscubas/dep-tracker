@@ -10,7 +10,7 @@ export default function Table({ tableData }: TableProps) {
   const rows = tableData.map((dependency: Dependency) => {
     const current = dependency.currentVersion.replace(/\^/, "");
     const latest = dependency.latestVersion;
-    const is_upgradable = SemVer.gt(latest, current);
+    const upgradable = SemVer.gt(latest, current);
 
     return (
       <tr
@@ -20,7 +20,7 @@ export default function Table({ tableData }: TableProps) {
         <th scope="row" className="px-6 py-4 font-medium whitespace-nowrap">
           <p className="flex">
             {dependency.packageName + ""}
-            {is_upgradable ? <GiUpgrade className="text-yellow-400" /> : ""}
+            {upgradable ? <GiUpgrade className="text-yellow-400" /> : ""}
           </p>
         </th>
         <td className="px-6 py-4">{dependency.description}</td>
@@ -28,10 +28,10 @@ export default function Table({ tableData }: TableProps) {
         <td className="px-6 py-4">{dependency.maintainers}</td>
         <td className="px-6 py-4">{dependency.keywords}</td>
         <td className="px-6 py-4">{dependency.license}</td>
-        <td className={"px-6 py-4" + is_upgradable ? "text-yellow-400" : ""}>
+        <td className={"px-6 py-4" + upgradable ? "text-yellow-400" : ""}>
           {dependency.currentVersion}
         </td>
-        <td className={"px-6 py-4" + is_upgradable ? "text-yellow-400" : ""}>
+        <td className={"px-6 py-4" + upgradable ? "text-yellow-400" : ""}>
           {dependency.latestVersion}
         </td>
       </tr>
