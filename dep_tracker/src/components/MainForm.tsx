@@ -14,6 +14,8 @@ import {Dependency, getDependenciesWithVersion} from "../api/registry.api";
 import {Fragment, useState} from "react";
 import Table from "./Table";
 import Gallery from "@/components/Gallery.tsx";
+import { FaThList } from "react-icons/fa";
+import { BsFillGridFill } from "react-icons/bs";
 
 interface packageJson {
   dependencies: Record<string, string>;
@@ -27,6 +29,14 @@ export interface Dependencies {
 export default function MainForm() {
   const [tableData, setTableData] = useState<Array<Dependency>>([]);
   const hasTable: boolean = tableData.length > 0;
+  const [viewMode, setViewMode] = useState<string>('list');
+  const toggleButtons = (
+    <div className="flex justify-end items-center rounded-md shadow-sm mr-10" role="group">
+      <Button disabled={viewMode === 'list'} onClick={() => setViewMode('list')} className="text-2xl hover:text-gray-600"><FaThList /></Button>
+      <Button disabled={viewMode === 'grid'} onClick={() => setViewMode('grid')} className="text-2xl hover:text-gray-600"><BsFillGridFill /></Button>
+    </div>
+  )
+  const view = viewMode === "list" ? <Table tableData={tableData} buttons={toggleButtons}/> : <Gallery galleryData={tableData} buttons={toggleButtons}/>
 
   const mainFormSchema = Yup.object().shape({
     file: Yup.mixed<File>()
@@ -91,8 +101,7 @@ export default function MainForm() {
   return (
     <Fragment>
       {hasTable ? (
-        // <Table tableData={tableData}/>
-        <Gallery galleryData={tableData}/>
+        view
       ) : (
         <Card className="md:w-[700px] bg-green-700 text-gray-900 py-10">
           <CardHeader>
