@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { UploadInput } from "./UploadInput";
 import { Dependency, getDependenciesWithVersion } from "../api/registry.api";
-import { Fragment, useState } from "react";
+import { useState } from "react";
 import Table from "./Table";
 
 interface packageJson {
@@ -26,7 +26,6 @@ export interface Dependencies {
 export default function MainForm() {
   const [tableData, setTableData] = useState<Array<Dependency>>([]);
   const hasTable: boolean = tableData.length > 0;
-  console.log("hasTable", tableData.length > 0);
 
   const mainFormSchema = Yup.object().shape({
     file: Yup.mixed<File>()
@@ -69,6 +68,7 @@ export default function MainForm() {
 
           setTableData(result);
         } catch (error: unknown) {
+          // ADD ERROR HANDLING COMPONENT
           if (error instanceof Response) {
             console.log(
               `${error.url
@@ -88,7 +88,7 @@ export default function MainForm() {
   });
 
   return (
-    <Fragment>
+    <>
       {hasTable ? (
         <Table tableData={tableData} />
       ) : (
@@ -121,6 +121,6 @@ export default function MainForm() {
           </FormikProvider>
         </Card>
       )}
-    </Fragment>
+    </>
   );
 }
