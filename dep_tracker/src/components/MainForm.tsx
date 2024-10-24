@@ -9,9 +9,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {UploadInput} from "./UploadInput";
-import {Dependency, getDependenciesWithVersion} from "../api/registry.api";
-import {Fragment, useState} from "react";
+import { UploadInput } from "./UploadInput";
+import { Dependency, getDependenciesWithVersion } from "../api/registry.api";
+import { useState } from "react";
 import Table from "./Table";
 import Gallery from "@/components/Gallery.tsx";
 import { FaThList } from "react-icons/fa";
@@ -80,6 +80,7 @@ export default function MainForm() {
 
           setTableData(result);
         } catch (error: unknown) {
+          // ADD ERROR HANDLING COMPONENT
           if (error instanceof Response) {
             console.log(
               `${error.url
@@ -99,7 +100,7 @@ export default function MainForm() {
   });
 
   return (
-    <Fragment>
+    <>
       {hasTable ? (
         view
       ) : (
@@ -132,6 +133,6 @@ export default function MainForm() {
           </FormikProvider>
         </Card>
       )}
-    </Fragment>
+    </>
   );
 }

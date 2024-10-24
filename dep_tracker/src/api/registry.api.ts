@@ -1,4 +1,4 @@
-import { Dependencies } from "../components/MainForm";
+import {Dependencies} from "../components/MainForm";
 
 export interface RegistryApiResponse {
   name: string;
@@ -78,14 +78,14 @@ export interface Scripts {
 }
 
 export interface Dependency {
-  packageName: string;
-  latestVersion: string;
+  author?: string;
   currentVersion: string;
-  license: string;
-  keywords: string[];
   description: string;
-  author: string | undefined;
+  keywords: string[];
+  latestVersion: string;
+  license: string;
   maintainers: string[];
+  packageName: string;
 }
 
 export async function getDependenciesWithVersion(
@@ -117,13 +117,11 @@ export async function getPackageInfo(
   package_name: string
 ): Promise<RegistryApiResponse> {
   const url: string = `https://registry.npmjs.org/${package_name}/latest`;
-  const response = await fetch(url).then((response) => {
+  return fetch(url).then((response) => {
     if (!response.ok) {
       throw response;
     }
 
     return response.json();
   });
-
-  return response;
 }
