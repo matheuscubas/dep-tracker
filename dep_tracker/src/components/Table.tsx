@@ -1,16 +1,18 @@
 import { Dependency } from "@/api/registry.api";
 import { GiUpgrade } from "react-icons/gi";
 import SemVer from "semver";
+import {ReactElement} from "react";
 
 interface TableProps {
   tableData: Array<Dependency>;
+  buttons: ReactElement;
 }
 
-export default function Table({ tableData }: TableProps) {
+export default function Table({ tableData, buttons }: TableProps) {
   const rows = tableData.map((dependency: Dependency) => {
     const current = dependency.currentVersion.replace(/\^/, "");
     const latest = dependency.latestVersion;
-    const is_upgradable = SemVer.gt(latest, current);
+    const upgradable = SemVer.gt(latest, current);
 
     return (
       <tr
@@ -20,7 +22,7 @@ export default function Table({ tableData }: TableProps) {
         <th scope="row" className="px-6 py-4 font-medium whitespace-nowrap">
           <p className="flex">
             {dependency.packageName + ""}
-            {is_upgradable ? <GiUpgrade className="text-yellow-400" /> : ""}
+            {upgradable ? <GiUpgrade className="text-yellow-400" /> : ""}
           </p>
         </th>
         <td className="px-6 py-4">{dependency.description}</td>
@@ -28,10 +30,10 @@ export default function Table({ tableData }: TableProps) {
         <td className="px-6 py-4">{dependency.maintainers}</td>
         <td className="px-6 py-4">{dependency.keywords}</td>
         <td className="px-6 py-4">{dependency.license}</td>
-        <td className={"px-6 py-4" + is_upgradable ? "text-yellow-400" : ""}>
+        <td className={"px-6 py-4" + upgradable ? "text-yellow-400" : ""}>
           {dependency.currentVersion}
         </td>
-        <td className={"px-6 py-4" + is_upgradable ? "text-yellow-400" : ""}>
+        <td className={"px-6 py-4" + upgradable ? "text-yellow-400" : ""}>
           {dependency.latestVersion}
         </td>
       </tr>
@@ -56,13 +58,16 @@ export default function Table({ tableData }: TableProps) {
   });
 
   return (
-    <div className="relative overflow-x-auto shadow-md sm:rounded-lg mx-10">
-      <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-        <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-          <tr>{headers}</tr>
-        </thead>
-        <tbody>{rows}</tbody>
-      </table>
+    <div className="w-full">
+      {buttons}
+      <div className="relative overflow-x-auto shadow-md sm:rounded-lg mx-10">
+        <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+          <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+            <tr>{headers}</tr>
+          </thead>
+          <tbody>{rows}</tbody>
+        </table>
+      </div>
     </div>
   );
 }

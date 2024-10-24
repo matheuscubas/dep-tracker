@@ -1,6 +1,6 @@
-import { FormikProvider, useFormik } from "formik";
+import {FormikProvider, useFormik} from "formik";
 import * as Yup from "yup";
-import { Button } from "@/components/ui/button";
+import {Button} from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -13,6 +13,9 @@ import { UploadInput } from "./UploadInput";
 import { Dependency, getDependenciesWithVersion } from "../api/registry.api";
 import { useState } from "react";
 import Table from "./Table";
+import Gallery from "@/components/Gallery.tsx";
+import { FaThList } from "react-icons/fa";
+import { BsFillGridFill } from "react-icons/bs";
 
 interface packageJson {
   dependencies: Record<string, string>;
@@ -26,6 +29,14 @@ export interface Dependencies {
 export default function MainForm() {
   const [tableData, setTableData] = useState<Array<Dependency>>([]);
   const hasTable: boolean = tableData.length > 0;
+  const [viewMode, setViewMode] = useState<string>('list');
+  const toggleButtons = (
+    <div className="flex justify-end items-center rounded-md shadow-sm mr-10" role="group">
+      <Button disabled={viewMode === 'list'} onClick={() => setViewMode('list')} className="text-2xl hover:text-gray-600"><FaThList /></Button>
+      <Button disabled={viewMode === 'grid'} onClick={() => setViewMode('grid')} className="text-2xl hover:text-gray-600"><BsFillGridFill /></Button>
+    </div>
+  )
+  const view = viewMode === "list" ? <Table tableData={tableData} buttons={toggleButtons}/> : <Gallery galleryData={tableData} buttons={toggleButtons}/>
 
   const mainFormSchema = Yup.object().shape({
     file: Yup.mixed<File>()
@@ -36,6 +47,7 @@ export default function MainForm() {
           const extension = file.name.toString().split(".").pop();
           const isValid = extension === "json";
           if (!isValid) context?.createError();
+
           return isValid;
         },
       }),
@@ -46,14 +58,14 @@ export default function MainForm() {
       file: undefined,
     },
     validationSchema: mainFormSchema,
-    onSubmit: ({ file }) => {
+    onSubmit: ({file}) => {
       const reader = new FileReader();
       if (!file) return;
       reader.onload = async (e) => {
         if (!e.target?.result) return;
 
         const packageJson = e.target.result as string;
-        const { dependencies, devDependencies }: packageJson =
+        const {dependencies, devDependencies}: packageJson =
           JSON.parse(packageJson);
 
         const projectDependencies: Dependencies = {
@@ -90,7 +102,7 @@ export default function MainForm() {
   return (
     <>
       {hasTable ? (
-        <Table tableData={tableData} />
+        view
       ) : (
         <Card className="md:w-[700px] bg-green-700 text-gray-900 py-10">
           <CardHeader>
