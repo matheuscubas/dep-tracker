@@ -12,7 +12,7 @@ export default function Layout({ children }: PropsWithChildren) {
             Tracker™
           </h1>
           <p className="text-center text-gray-900 font-extrabold">
-            quickly identify all upgradables from your dependencies!
+            quickly identify all upgradable from your dependencies!
           </p>
         </div>
       </div>

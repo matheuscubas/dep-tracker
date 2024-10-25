@@ -9,13 +9,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { UploadInput } from "./UploadInput";
-import { Dependency, getDependenciesWithVersion } from "../api/registry.api";
-import { useState } from "react";
+import {UploadInput} from "./UploadInput";
+import {Dependency, getDependenciesWithVersion} from "../api/registry.api";
+import React, {ReactElement, useEffect, useRef, useState} from "react";
 import Table from "./Table";
 import Gallery from "@/components/Gallery.tsx";
-import { FaThList } from "react-icons/fa";
-import { BsFillGridFill } from "react-icons/bs";
+import {FaThList} from "react-icons/fa";
+import {BsFillGridFill} from "react-icons/bs";
+import SemVer from "semver";
 
 interface packageJson {
   dependencies: Record<string, string>;
@@ -26,17 +27,59 @@ export interface Dependencies {
   [key: string]: string;
 }
 
-export default function MainForm() {
-  const [tableData, setTableData] = useState<Array<Dependency>>([]);
-  const hasTable: boolean = tableData.length > 0;
-  const [viewMode, setViewMode] = useState<string>('list');
-  const toggleButtons = (
-    <div className="flex justify-end items-center rounded-md shadow-sm mr-10" role="group">
-      <Button disabled={viewMode === 'list'} onClick={() => setViewMode('list')} className="text-2xl hover:text-gray-600"><FaThList /></Button>
-      <Button disabled={viewMode === 'grid'} onClick={() => setViewMode('grid')} className="text-2xl hover:text-gray-600"><BsFillGridFill /></Button>
+interface filterButtonsProps {
+  setState: React.Dispatch<React.SetStateAction<string>>;
+  currentState: string;
+}
+
+interface toggleButtonsProps {
+  setFilter: React.Dispatch<React.SetStateAction<string>>;
+  setViewMode: React.Dispatch<React.SetStateAction<string>>;
+  filter: string;
+  viewMode: string;
+}
+
+function FilterButtons({setState, currentState}: filterButtonsProps): ReactElement {
+  return (
+    <div className="inline-flex shadow-sm" role="group">
+      <p className="font-bold text-white content-center mr-2">Filters:</p>
+      <Button onClick={() => setState('')}
+              className="px-4 py-2 text-sm font-medium text-blue-700 bg-white rounded-[0rem] border border-gray-200 rounded-s-lg hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700"
+              disabled={currentState === ''}>All</Button>
+      <Button onClick={() => setState('upgradable')}
+              className="px-4 py-2 text-sm font-medium text-gray-900 bg-white rounded-[0rem] border-t border-b border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700"
+              disabled={currentState === 'upgradable'}>Upgradable</Button>
+      <Button onClick={() => setState('dependency')}
+              className="px-4 py-2 text-sm font-medium text-gray-900 bg-white rounded-[0rem] border-t border-b border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700"
+              disabled={currentState === 'dependency'}>Dependency</Button>
+      <Button onClick={() => setState('devDependency')}
+              className="px-4 py-2 text-sm font-medium text-gray-900 bg-white border rounded-[0rem] border-gray-200 rounded-e-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700"
+              disabled={currentState === 'devDependency'}>DevDependency</Button>
+    </div>);
+}
+
+function ToggleButtons({setFilter, filter, setViewMode, viewMode}: toggleButtonsProps): ReactElement {
+  return (
+    <div className="flex justify-between items-center shadow-sm mx-10 mb-1" role="group">
+      <FilterButtons setState={setFilter} currentState={filter}/>
+      <div>
+        <Button disabled={viewMode === 'list'} onClick={() => setViewMode('list')}
+                className="text-2xl hover:text-gray-600"><FaThList/></Button>
+        <Button disabled={viewMode === 'grid'} onClick={() => setViewMode('grid')}
+                className="text-2xl hover:text-gray-600"><BsFillGridFill/></Button>
+      </div>
     </div>
   )
-  const view = viewMode === "list" ? <Table tableData={tableData} buttons={toggleButtons}/> : <Gallery galleryData={tableData} buttons={toggleButtons}/>
+}
+
+export default function MainForm() {
+  const data = useRef<Array<Dependency>>([]);
+  const [filteredData, setFilteredData] = useState<Array<Dependency>>([]);
+  const [filter, setFilter] = useState<string>('');
+  const hasData: boolean = data.current.length > 0;
+  const [viewMode, setViewMode] = useState<string>('list');
+  const devDependenciesKeys = useRef<Array<string>>([]);
+  const dependenciesKeys = useRef<Array<string>>([]);
 
   const mainFormSchema = Yup.object().shape({
     file: Yup.mixed<File>()
@@ -68,6 +111,9 @@ export default function MainForm() {
         const {dependencies, devDependencies}: packageJson =
           JSON.parse(packageJson);
 
+        devDependenciesKeys.current = Object.keys(devDependencies);
+        dependenciesKeys.current = Object.keys(dependencies);
+
         const projectDependencies: Dependencies = {
           ...dependencies,
           ...devDependencies,
@@ -78,7 +124,8 @@ export default function MainForm() {
             projectDependencies
           );
 
-          setTableData(result);
+          data.current = result;
+          setFilteredData(result);
         } catch (error: unknown) {
           // ADD ERROR HANDLING COMPONENT
           if (error instanceof Response) {
@@ -99,10 +146,45 @@ export default function MainForm() {
     },
   });
 
+  const handleFilterChange = () => {
+    setFilteredData(data.current)
+    let filteredResult: Array<Dependency>
+
+    switch (filter) {
+      case "devDependency":
+        filteredResult = data.current.filter((dependency) => {
+          return devDependenciesKeys.current.includes(dependency.packageName)
+        })
+        break;
+      case "dependency":
+        filteredResult = data.current.filter((dependency) => {
+          return dependenciesKeys.current.includes(dependency.packageName)
+        })
+        break;
+      case "upgradable":
+        filteredResult = data.current.filter((dependency) => {
+          const current = dependency.currentVersion.replace(/\^/, "");
+          const latest = dependency.latestVersion;
+
+          return SemVer.gt(latest, current);
+        })
+        break;
+      default:
+        filteredResult = data.current;
+        break;
+    }
+
+    setFilteredData(filteredResult)
+  }
+  useEffect(handleFilterChange, [filter]);
+
   return (
     <>
-      {hasTable ? (
-        view
+      {hasData ? (
+        viewMode === "list" ? <Table tableData={filteredData}
+                                     buttons={<ToggleButtons setFilter={setFilter} setViewMode={setViewMode} filter={viewMode} viewMode={viewMode}/>}/> :
+          <Gallery galleryData={filteredData}
+                   buttons={<ToggleButtons setFilter={setFilter} setViewMode={setViewMode} filter={viewMode} viewMode={viewMode}/>}/>
       ) : (
         <Card className="md:w-[700px] bg-green-700 text-gray-900 py-10">
           <CardHeader>
