@@ -18,6 +18,7 @@ import {FaThList} from "react-icons/fa";
 import {BsFillGridFill} from "react-icons/bs";
 import SemVer from "semver";
 import {MainFormButton} from "@/components/MainForm/Button.tsx";
+import {LuLoader2} from "react-icons/lu";
 
 interface PackageJson {
   dependencies: Record<string, string>;
@@ -57,10 +58,18 @@ function FilterButtons({setState, currentState}: FilterButtonsProps): ReactEleme
   return (
     <div className="inline-flex shadow-sm" role="group">
       <p className="font-bold text-white content-center mr-2">Filters:</p>
-      <MainFormButton onClick={() => setState('')} disabled={currentState === ''} className="rounded-s-lg border">All</MainFormButton>
-      <MainFormButton onClick={() => setState('upgradable')} disabled={currentState === 'upgradable'} className="border-t border-b">Upgradable</MainFormButton>
-      <MainFormButton onClick={() => setState('dependency')} disabled={currentState === 'dependency'} className="border-t border-b">Dependency</MainFormButton>
-      <MainFormButton onClick={() => setState('devDependency')} disabled={currentState === 'devDependency'} className="rounded-e-lg">DevDependency</MainFormButton>
+      <MainFormButton onClick={() => setState('')}
+                      disabled={currentState === ''}
+                      className="rounded-s-lg border">All</MainFormButton>
+      <MainFormButton onClick={() => setState('upgradable')}
+                      disabled={currentState === 'upgradable'}
+                      className="border-t border-b">Upgradable</MainFormButton>
+      <MainFormButton onClick={() => setState('dependency')}
+                      disabled={currentState === 'dependency'}
+                      className="border-t border-b">Dependency</MainFormButton>
+      <MainFormButton onClick={() => setState('devDependency')}
+                      disabled={currentState === 'devDependency'}
+                      className="rounded-e-lg">DevDependency</MainFormButton>
     </div>);
 }
 
@@ -78,11 +87,13 @@ function ToggleButtons({setFilter, filter, setViewMode, viewMode}: ToggleButtons
   )
 }
 
-function DisplayData({ viewMode, filter, setViewMode, setFilter, filteredData } : DisplayNavBarProps) : ReactElement {
+function DisplayData({viewMode, filter, setViewMode, setFilter, filteredData}: DisplayNavBarProps): ReactElement {
   return (viewMode === ViewMode.LIST ? <Table tableData={filteredData}
-                                      buttons={<ToggleButtons setFilter={setFilter} setViewMode={setViewMode} filter={filter} viewMode={viewMode}/>}/> :
+                                              buttons={<ToggleButtons setFilter={setFilter} setViewMode={setViewMode}
+                                                                      filter={filter} viewMode={viewMode}/>}/> :
     <Gallery galleryData={filteredData}
-             buttons={<ToggleButtons setFilter={setFilter} setViewMode={setViewMode} filter={filter} viewMode={viewMode}/>}/>)
+             buttons={<ToggleButtons setFilter={setFilter} setViewMode={setViewMode} filter={filter}
+                                     viewMode={viewMode}/>}/>)
 }
 
 export default function MainForm() {
@@ -194,7 +205,8 @@ export default function MainForm() {
   return (
     <>
       {hasData ? (
-        <DisplayData viewMode={viewMode} filter={filter} setViewMode={setViewMode} setFilter={setFilter} filteredData={filteredData} />
+        <DisplayData viewMode={viewMode} filter={filter} setViewMode={setViewMode} setFilter={setFilter}
+                     filteredData={filteredData}/>
       ) : (
         <Card className="md:w-[700px] bg-green-700 text-gray-900 py-10">
           <CardHeader>
@@ -213,13 +225,17 @@ export default function MainForm() {
                 />
               </CardContent>
               <CardFooter className="flex justify-end">
-                <Button
+                {formik.isSubmitting ? <Button disabled>
+                  <LuLoader2 className="mr-2 h-4 w-4 animate-spin"/>
+                  Please wait..
+                </Button> : <Button
                   disabled={formik.isSubmitting}
                   type="submit"
                   onClick={formik.submitForm}
                 >
                   Analyze
                 </Button>
+                }
               </CardFooter>
             </form>
           </FormikProvider>
