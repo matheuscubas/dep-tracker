@@ -17,8 +17,9 @@ import Gallery from "@/components/Gallery.tsx";
 import {FaThList} from "react-icons/fa";
 import {BsFillGridFill} from "react-icons/bs";
 import SemVer from "semver";
+import {MainFormButton} from "@/components/MainForm/Button.tsx";
 
-interface packageJson {
+interface PackageJson {
   dependencies: Record<string, string>;
   devDependencies: Record<string, string>;
 }
@@ -27,49 +28,61 @@ export interface Dependencies {
   [key: string]: string;
 }
 
-interface filterButtonsProps {
+export interface FilterButtonsProps {
   setState: React.Dispatch<React.SetStateAction<string>>;
   currentState: string;
 }
 
-interface toggleButtonsProps {
+interface ToggleButtonsProps {
   setFilter: React.Dispatch<React.SetStateAction<string>>;
-  setViewMode: React.Dispatch<React.SetStateAction<string>>;
+  setViewMode: React.Dispatch<React.SetStateAction<ViewMode>>;
   filter: string;
   viewMode: string;
 }
 
-function FilterButtons({setState, currentState}: filterButtonsProps): ReactElement {
+interface DisplayNavBarProps {
+  viewMode: ViewMode;
+  filter: string;
+  setViewMode: React.Dispatch<React.SetStateAction<ViewMode>>;
+  setFilter: React.Dispatch<React.SetStateAction<string>>;
+  filteredData: Array<Dependency>;
+}
+
+enum ViewMode {
+  LIST = 'list',
+  GRID = 'grid',
+}
+
+function FilterButtons({setState, currentState}: FilterButtonsProps): ReactElement {
   return (
     <div className="inline-flex shadow-sm" role="group">
       <p className="font-bold text-white content-center mr-2">Filters:</p>
-      <Button onClick={() => setState('')}
-              className="px-4 py-2 text-sm font-medium text-blue-700 bg-white rounded-[0rem] border border-gray-200 rounded-s-lg hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700"
-              disabled={currentState === ''}>All</Button>
-      <Button onClick={() => setState('upgradable')}
-              className="px-4 py-2 text-sm font-medium text-gray-900 bg-white rounded-[0rem] border-t border-b border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700"
-              disabled={currentState === 'upgradable'}>Upgradable</Button>
-      <Button onClick={() => setState('dependency')}
-              className="px-4 py-2 text-sm font-medium text-gray-900 bg-white rounded-[0rem] border-t border-b border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700"
-              disabled={currentState === 'dependency'}>Dependency</Button>
-      <Button onClick={() => setState('devDependency')}
-              className="px-4 py-2 text-sm font-medium text-gray-900 bg-white border rounded-[0rem] border-gray-200 rounded-e-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700"
-              disabled={currentState === 'devDependency'}>DevDependency</Button>
+      <MainFormButton onClick={() => setState('')} disabled={currentState === ''} className="rounded-s-lg border">All</MainFormButton>
+      <MainFormButton onClick={() => setState('upgradable')} disabled={currentState === 'upgradable'} className="border-t border-b">Upgradable</MainFormButton>
+      <MainFormButton onClick={() => setState('dependency')} disabled={currentState === 'dependency'} className="border-t border-b">Dependency</MainFormButton>
+      <MainFormButton onClick={() => setState('devDependency')} disabled={currentState === 'devDependency'} className="rounded-e-lg">DevDependency</MainFormButton>
     </div>);
 }
 
-function ToggleButtons({setFilter, filter, setViewMode, viewMode}: toggleButtonsProps): ReactElement {
+function ToggleButtons({setFilter, filter, setViewMode, viewMode}: ToggleButtonsProps): ReactElement {
   return (
     <div className="flex justify-between items-center shadow-sm mx-10 mb-1" role="group">
       <FilterButtons setState={setFilter} currentState={filter}/>
       <div>
-        <Button disabled={viewMode === 'list'} onClick={() => setViewMode('list')}
+        <Button disabled={viewMode === ViewMode.LIST} onClick={() => setViewMode(ViewMode.LIST)}
                 className="text-2xl hover:text-gray-600"><FaThList/></Button>
-        <Button disabled={viewMode === 'grid'} onClick={() => setViewMode('grid')}
+        <Button disabled={viewMode === ViewMode.GRID} onClick={() => setViewMode(ViewMode.GRID)}
                 className="text-2xl hover:text-gray-600"><BsFillGridFill/></Button>
       </div>
     </div>
   )
+}
+
+function DisplayData({ viewMode, filter, setViewMode, setFilter, filteredData } : DisplayNavBarProps) : ReactElement {
+  return (viewMode === ViewMode.LIST ? <Table tableData={filteredData}
+                                      buttons={<ToggleButtons setFilter={setFilter} setViewMode={setViewMode} filter={filter} viewMode={viewMode}/>}/> :
+    <Gallery galleryData={filteredData}
+             buttons={<ToggleButtons setFilter={setFilter} setViewMode={setViewMode} filter={filter} viewMode={viewMode}/>}/>)
 }
 
 export default function MainForm() {
@@ -77,7 +90,7 @@ export default function MainForm() {
   const [filteredData, setFilteredData] = useState<Array<Dependency>>([]);
   const [filter, setFilter] = useState<string>('');
   const hasData: boolean = data.current.length > 0;
-  const [viewMode, setViewMode] = useState<string>('list');
+  const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.LIST);
   const devDependenciesKeys = useRef<Array<string>>([]);
   const dependenciesKeys = useRef<Array<string>>([]);
 
@@ -108,7 +121,7 @@ export default function MainForm() {
         if (!e.target?.result) return;
 
         const packageJson = e.target.result as string;
-        const {dependencies, devDependencies}: packageJson =
+        const {dependencies, devDependencies}: PackageJson =
           JSON.parse(packageJson);
 
         devDependenciesKeys.current = Object.keys(devDependencies);
@@ -181,10 +194,7 @@ export default function MainForm() {
   return (
     <>
       {hasData ? (
-        viewMode === "list" ? <Table tableData={filteredData}
-                                     buttons={<ToggleButtons setFilter={setFilter} setViewMode={setViewMode} filter={viewMode} viewMode={viewMode}/>}/> :
-          <Gallery galleryData={filteredData}
-                   buttons={<ToggleButtons setFilter={setFilter} setViewMode={setViewMode} filter={viewMode} viewMode={viewMode}/>}/>
+        <DisplayData viewMode={viewMode} filter={filter} setViewMode={setViewMode} setFilter={setFilter} filteredData={filteredData} />
       ) : (
         <Card className="md:w-[700px] bg-green-700 text-gray-900 py-10">
           <CardHeader>
