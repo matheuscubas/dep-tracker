@@ -16,7 +16,7 @@ export default function Layout({ children }: PropsWithChildren) {
           </p>
         </div>
       </div>
-      <div className="mt-2 bg-gray-900 text-gray-400 w-screen max-w-screen h-screen flex justify-center items-center">
+      <div className="mt-2 bg-gray-900 text-gray-400 w-screen max-w-screen h-screen flex items-center flex-col">
         {children}
       </div>
     </div>
