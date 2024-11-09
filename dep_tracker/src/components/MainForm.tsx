@@ -26,10 +26,6 @@ interface PackageJson {
   devDependencies: Record<string, string>;
 }
 
-export interface Dependencies {
-  [key: string]: string;
-}
-
 interface ErrorResult {
   type?: string;
   message?: string;
@@ -149,21 +145,15 @@ export default function MainForm() {
           JSON.parse(packageJson);
 
         if (!dependencies || !devDependencies) {
-          errorHolder.current.type = 'InvalidFile'
-          errorHolder.current.message = 'The provided file has invalid format, make sure you are uploading a valid package.json.'
-          errorHolder.current.button = (<Button className="px-8"
-                                                onClick={() => {
-                                                  formik.setSubmitting(false);
-                                                  setHasError(false);
-                                                }}
-          >Ok</Button>);
-          setHasError(true)
+          formik.setFieldError('file', "The provided file's content is not in the expected package.json format");
+          formik.setSubmitting(false);
+          return;
         }
 
         devDependenciesKeys.current = Object.keys(devDependencies);
         dependenciesKeys.current = Object.keys(dependencies);
 
-        const projectDependencies: Dependencies = {
+        const projectDependencies: Record<string, string> = {
           ...dependencies,
           ...devDependencies,
         };
@@ -178,6 +168,9 @@ export default function MainForm() {
         } catch (error: unknown) {
 
           if (error instanceof Response) {
+            // add further inspection in the error ????
+            // change RegistryApi to load data?
+
             const packageName = `${error.url.replace("https://registry.npmjs.org/", "").replace("/latest", "")}`
 
             errorHolder.current.type = 'InvalidPackage'
@@ -240,7 +233,7 @@ export default function MainForm() {
                      setFilter={setFilter}
                      filteredData={filteredData}/>
       ) : (
-        <Card className="md:w-[700px] bg-green-700 text-gray-900 py-10">
+        <Card className="md:w-[700px] bg-green-700 text-gray-900 py-10 my-auto">
           <CardHeader>
             <CardTitle>Upload your package.json file</CardTitle>
             <CardDescription className="text-gray-900">
