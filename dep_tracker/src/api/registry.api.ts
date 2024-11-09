@@ -1,5 +1,3 @@
-import {Dependencies} from "../components/MainForm";
-
 export interface RegistryApiResponse {
   name: string;
   version: string;
@@ -89,7 +87,7 @@ export interface Dependency {
 }
 
 export async function getDependenciesWithVersion(
-  dependencies: Dependencies
+  dependencies: Record<string, string>
 ): Promise<Array<Dependency>> {
   const packages: Array<string> = Object.keys(dependencies);
   const packagesWithVersion: Array<Dependency> = [];
