@@ -1,5 +1,3 @@
-import {Dependencies} from "../components/MainForm";
-
 export interface RegistryApiResponse {
   name: string;
   version: string;
@@ -46,7 +44,8 @@ export interface Bugs {
   url: string;
 }
 
-export interface Directories {}
+export interface Directories {
+}
 
 export interface Dist {
   integrity: string;
@@ -79,35 +78,43 @@ export interface Scripts {
 
 export interface Dependency {
   author?: string;
-  currentVersion: string;
+  currentVersion?: string;
   description: string;
-  keywords: string[];
-  latestVersion: string;
-  license: string;
-  maintainers: string[];
+  keywords?: string[];
+  latestVersion?: string;
+  license?: string;
+  maintainers?: string[];
   packageName: string;
 }
 
 export async function getDependenciesWithVersion(
-  dependencies: Dependencies
+  dependencies: Record<string, string>
 ): Promise<Array<Dependency>> {
   const packages: Array<string> = Object.keys(dependencies);
   const packagesWithVersion: Array<Dependency> = [];
 
   for (const package_name of packages) {
-    const response: RegistryApiResponse = await getPackageInfo(package_name);
+    try {
+      const response: RegistryApiResponse = await getPackageInfo(package_name);
 
-    const filteredResult: Dependency = {
-      packageName: response.name,
-      description: response.description,
-      author: response.author?.name,
-      maintainers: response.maintainers.map((npmUser) => npmUser.name),
-      latestVersion: response.version,
-      currentVersion: dependencies[package_name],
-      license: response.license,
-      keywords: response.keywords,
-    };
-    packagesWithVersion.push(filteredResult);
+      const filteredResult: Dependency = {
+        packageName: response.name,
+        description: response.description,
+        author: response.author?.name,
+        maintainers: response.maintainers.map((npmUser) => npmUser.name),
+        latestVersion: response?.version,
+        currentVersion: dependencies[package_name],
+        license: response.license,
+        keywords: response.keywords,
+      }
+
+      packagesWithVersion.push(filteredResult);
+    } catch (_e) {
+      packagesWithVersion.push({
+        packageName: package_name,
+        description: "Could not find this package or it doesn't exist"
+      })
+    }
   }
 
   return packagesWithVersion;
@@ -117,11 +124,12 @@ export async function getPackageInfo(
   package_name: string
 ): Promise<RegistryApiResponse> {
   const url: string = `https://registry.npmjs.org/${package_name}/latest`;
+
   return fetch(url).then((response) => {
     if (!response.ok) {
-      throw response;
+      throw new Error()
     }
 
     return response.json();
-  });
+  })
 }

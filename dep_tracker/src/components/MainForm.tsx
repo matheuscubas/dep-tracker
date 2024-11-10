@@ -19,21 +19,10 @@ import {BsFillGridFill} from "react-icons/bs";
 import SemVer from "semver";
 import {MainFormButton} from "@/components/MainForm/Button.tsx";
 import {LuLoader2} from "react-icons/lu";
-import {AlertDestructive} from "@/components/Alert.tsx";
 
 interface PackageJson {
   dependencies: Record<string, string>;
   devDependencies: Record<string, string>;
-}
-
-export interface Dependencies {
-  [key: string]: string;
-}
-
-interface ErrorResult {
-  type?: string;
-  message?: string;
-  button?: ReactElement;
 }
 
 export interface FilterButtonsProps {
@@ -108,14 +97,12 @@ function DisplayData({viewMode, filter, setViewMode, setFilter, filteredData,}: 
 
 export default function MainForm() {
   const data = useRef<Array<Dependency>>([]);
-  const [hasError, setHasError] = useState<boolean>(false);
   const [filteredData, setFilteredData] = useState<Array<Dependency>>([]);
   const [filter, setFilter] = useState<string>('');
   const hasData: boolean = data.current.length > 0;
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.LIST);
   const devDependenciesKeys = useRef<Array<string>>([]);
   const dependenciesKeys = useRef<Array<string>>([]);
-  const errorHolder = useRef<ErrorResult>({})
 
   const mainFormSchema = Yup.object().shape({
     file: Yup.mixed<File>()
@@ -149,49 +136,25 @@ export default function MainForm() {
           JSON.parse(packageJson);
 
         if (!dependencies || !devDependencies) {
-          errorHolder.current.type = 'InvalidFile'
-          errorHolder.current.message = 'The provided file has invalid format, make sure you are uploading a valid package.json.'
-          errorHolder.current.button = (<Button className="px-8"
-                                                onClick={() => {
-                                                  formik.setSubmitting(false);
-                                                  setHasError(false);
-                                                }}
-          >Ok</Button>);
-          setHasError(true)
+          formik.setFieldError('file', "The provided file's content is not in the expected package.json format");
+          formik.setSubmitting(false);
+          return;
         }
 
         devDependenciesKeys.current = Object.keys(devDependencies);
         dependenciesKeys.current = Object.keys(dependencies);
 
-        const projectDependencies: Dependencies = {
+        const projectDependencies: Record<string, string> = {
           ...dependencies,
           ...devDependencies,
         };
 
-        try {
-          const result: Array<Dependency> = await getDependenciesWithVersion(
-            projectDependencies
-          );
+        const result: Array<Dependency> = await getDependenciesWithVersion(
+          projectDependencies
+        );
 
-          data.current = result;
-          setFilteredData(result);
-        } catch (error: unknown) {
-
-          if (error instanceof Response) {
-            const packageName = `${error.url.replace("https://registry.npmjs.org/", "").replace("/latest", "")}`
-
-            errorHolder.current.type = 'InvalidPackage'
-            errorHolder.current.message = `${packageName} is not a Valid package or it was not found.`
-            errorHolder.current.button = (<Button
-              onClick={() => {
-                formik.setSubmitting(false);
-                setHasError(false);
-              }}
-              className="px-8"
-            >Ok</Button>);
-            setHasError(true);
-          }
-        }
+        data.current = result;
+        setFilteredData(result);
       };
       reader.readAsText(file, "UTF-8");
     },
@@ -214,10 +177,13 @@ export default function MainForm() {
         break;
       case "upgradable":
         filteredResult = data.current.filter((dependency) => {
-          const current = dependency.currentVersion.replace(/\^/, "");
-          const latest = dependency.latestVersion;
-
-          return SemVer.gt(latest, current);
+          const current = dependency?.currentVersion?.replace(/\^/, "");
+          const latest = dependency?.latestVersion;
+          if (latest && current) {
+            return SemVer.gt(latest, current);
+          } else {
+            return false
+          }
         })
         break;
       default:
@@ -231,8 +197,6 @@ export default function MainForm() {
 
   return (
     <>
-      {hasError ? <AlertDestructive errorType={errorHolder.current.type} errorMessage={errorHolder.current.message}
-                                    button={errorHolder.current.button}/> : ''}
       {hasData ? (
         <DisplayData viewMode={viewMode}
                      filter={filter}
@@ -240,7 +204,7 @@ export default function MainForm() {
                      setFilter={setFilter}
                      filteredData={filteredData}/>
       ) : (
-        <Card className="md:w-[700px] bg-green-700 text-gray-900 py-10">
+        <Card className="md:w-[700px] bg-green-700 text-gray-900 py-10 my-auto">
           <CardHeader>
             <CardTitle>Upload your package.json file</CardTitle>
             <CardDescription className="text-gray-900">
