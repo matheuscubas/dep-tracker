@@ -60,7 +60,7 @@ enum ViewMode {
 
 function FilterButtons({setState, currentState}: FilterButtonsProps): ReactElement {
   return (
-    <div className="inline-flex shadow-sm" role="group">
+    <div className="inline-flex shadow-sm text-xs md:text-sm" role="group">
       <p className="font-bold text-white content-center mr-2">Filters:</p>
       <MainFormButton onClick={() => setState('')}
                       disabled={currentState === ''}
@@ -79,9 +79,10 @@ function FilterButtons({setState, currentState}: FilterButtonsProps): ReactEleme
 
 function ToggleButtons({setFilter, filter, setViewMode, viewMode}: ToggleButtonsProps): ReactElement {
   return (
-    <div className="flex justify-between items-center shadow-sm mx-10 mb-1" role="group">
+    <div className="md:flex md:justify-between items-center shadow-sm mx-10 mb-1" role="group">
       <FilterButtons setState={setFilter} currentState={filter}/>
       <div className="content-center flex">
+        <p className="font-bold text-white content-center mr-2 text-xs md:text-sm md:hidden md:invisible">Display:</p>
         <Button disabled={viewMode === ViewMode.LIST} onClick={() => setViewMode(ViewMode.LIST)}
                 className="text-2xl hover:text-gray-600"><FaThList/></Button>
         <Button disabled={viewMode === ViewMode.GRID} onClick={() => setViewMode(ViewMode.GRID)}
@@ -147,7 +148,7 @@ export default function MainForm() {
   const dependenciesKeys = useRef<Array<string>>([]);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
+  const itemsPerPage = window.innerWidth > 768 ? 6 : 3;
 
   const getPaginatedData = (data: Array<Dependency>): Array<Dependency> => {
     const startIndex = (currentPage - 1) * itemsPerPage;

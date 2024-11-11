@@ -34,7 +34,7 @@ export default function Table({tableData, buttons}: TableProps) {
     return (
       <tr
         className={`odd:bg-gray-900 even:bg-gray-800 border-b border-gray-700 hover:bg-gray-600 text-white transition-all duration-300 ease-in-out transform ${
-          isTransitioning ? "opacity-0 translate-y-4" : "opacity-100 translate-y-0"
+          isTransitioning ? "opacity-0 translate-y-4" : "opacity-100 translate-y-0 sm:text-sm"
         } 
         ${hasError ? "even:bg-red-900 odd:bg-red-800" : ''}`}
         key={dependency.packageName}
@@ -47,8 +47,8 @@ export default function Table({tableData, buttons}: TableProps) {
         </th>
         <td className="px-6 py-4">{dependency.description}</td>
         <td className="px-6 py-4">{dependency?.author}</td>
-        <td className="px-6 py-4">{dependency?.maintainers?.join(', ')}</td>
-        <td className="px-6 py-4">{dependency?.keywords?.join(', ')}</td>
+        <td className="px-6 py-4 invisible hidden md:visible md:table-cell">{dependency?.maintainers?.join(', ')}</td>
+        <td className="px-6 py-4 invisible hidden md:visible md:table-cell">{dependency?.keywords?.join(', ')}</td>
         <td className="px-6 py-4">{dependency?.license}</td>
         <td className={`px-6 py-4 ${upgradable ? "text-yellow-400" : ""}`}>
           {dependency?.currentVersion}
@@ -70,6 +70,10 @@ export default function Table({tableData, buttons}: TableProps) {
     "Current Version",
     "Latest Version",
   ].map((header, index) => {
+    if (window.innerWidth < 768 && [3, 4].includes(index)) {
+      return
+    }
+
     return (
       <th scope="col" className="px-6 py-3" key={index}>
         {header}
@@ -81,7 +85,7 @@ export default function Table({tableData, buttons}: TableProps) {
     <div className="w-full">
       {buttons}
       <div className="relative overflow-x-auto shadow-md sm:rounded-lg mx-10">
-        <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+        <table className="w-full text-xs text-left rtl:text-right text-gray-500 dark:text-gray-400">
           <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
           <tr>{headers}</tr>
           </thead>
