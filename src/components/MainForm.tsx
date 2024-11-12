@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import {UploadInput} from "./UploadInput";
 import {Dependency, getDependenciesWithVersion} from "../api/registry.api";
-import React, {ReactElement, useEffect, useRef, useState} from "react";
+import React, {ChangeEvent, ReactElement, useEffect, useRef, useState} from "react";
 import Table from "./Table";
 import Gallery from "@/components/Gallery.tsx";
 import {FaThList} from "react-icons/fa";
@@ -20,6 +20,7 @@ import SemVer from "semver";
 import {MainFormButton} from "@/components/MainForm/Button.tsx";
 import {LuLoader2} from "react-icons/lu";
 import {Pagination} from "@/components/Pagination.tsx";
+import SearchBar from "@/components/SearchBar.tsx";
 
 interface PackageJson {
   dependencies: Record<string, string>;
@@ -34,15 +35,19 @@ export interface FilterButtonsProps {
 interface ToggleButtonsProps {
   setFilter: React.Dispatch<React.SetStateAction<string>>;
   setViewMode: React.Dispatch<React.SetStateAction<ViewMode>>;
+  setSearchTerm: React.Dispatch<React.SetStateAction<string>>;
   filter: string;
   viewMode: string;
+  searchTerm: string;
 }
 
 interface DisplayNavBarProps {
+  setFilter: React.Dispatch<React.SetStateAction<string>>;
+  setViewMode: React.Dispatch<React.SetStateAction<ViewMode>>;
+  setSearchTerm: React.Dispatch<React.SetStateAction<string>>;
   viewMode: ViewMode;
   filter: string;
-  setViewMode: React.Dispatch<React.SetStateAction<ViewMode>>;
-  setFilter: React.Dispatch<React.SetStateAction<string>>;
+  searchTerm: string;
   filteredData: Array<Dependency>;
   getPaginatedData: (arr: Array<Dependency>) => Array<Dependency>;
   currentPage: number;
@@ -77,10 +82,20 @@ function FilterButtons({setState, currentState}: FilterButtonsProps): ReactEleme
     </div>);
 }
 
-function ToggleButtons({setFilter, filter, setViewMode, viewMode}: ToggleButtonsProps): ReactElement {
+function ToggleButtons({
+                         setFilter,
+                         filter,
+                         setViewMode,
+                         viewMode,
+                         searchTerm,
+                         setSearchTerm
+                       }: ToggleButtonsProps): ReactElement {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>): void => setSearchTerm(e.target.value.toLowerCase());
+
   return (
     <div className="md:flex md:justify-between items-center shadow-sm mx-10 mb-1" role="group">
       <FilterButtons setState={setFilter} currentState={filter}/>
+      <SearchBar setSearchTerm={handleChange} searchTerm={searchTerm}/>
       <div className="content-center flex">
         <p className="font-bold text-white content-center mr-2 text-xs md:text-sm md:hidden md:invisible">Display:</p>
         <Button disabled={viewMode === ViewMode.LIST} onClick={() => setViewMode(ViewMode.LIST)}
@@ -105,22 +120,33 @@ function DisplayData({
                        totalPages,
                        setCurrentPage,
                        setIsTransitioning,
-                       itemsPerPage
+                       itemsPerPage,
+                       searchTerm,
+                       setSearchTerm
                      }: DisplayNavBarProps): ReactElement {
-
   const paginatedData = getPaginatedData(filteredData);
+  let dataToRender: Array<Dependency> = [];
+
+  if (searchTerm) {
+    dataToRender = paginatedData.filter(dependency => dependency.packageName.toLowerCase().includes(searchTerm));
+  }
+  dataToRender = dataToRender.length > 0 ? dataToRender : paginatedData
 
   return (<>
-    {viewMode === ViewMode.LIST ? <Table tableData={paginatedData}
+    {viewMode === ViewMode.LIST ? <Table tableData={dataToRender}
                                          buttons={<ToggleButtons setFilter={setFilter}
                                                                  setViewMode={setViewMode}
                                                                  filter={filter}
-                                                                 viewMode={viewMode}/>}/> :
-      <Gallery galleryData={paginatedData}
+                                                                 viewMode={viewMode}
+                                                                 searchTerm={searchTerm}
+                                                                 setSearchTerm={setSearchTerm}/>}/> :
+      <Gallery galleryData={dataToRender}
                buttons={<ToggleButtons setFilter={setFilter}
                                        setViewMode={setViewMode}
                                        filter={filter}
-                                       viewMode={viewMode}/>}/>}
+                                       viewMode={viewMode}
+                                       searchTerm={searchTerm}
+                                       setSearchTerm={setSearchTerm}/>}/>}
     <Pagination
       currentPage={currentPage}
       totalPages={totalPages}
@@ -146,9 +172,10 @@ export default function MainForm() {
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.LIST);
   const devDependenciesKeys = useRef<Array<string>>([]);
   const dependenciesKeys = useRef<Array<string>>([]);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
+  const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = window.innerWidth > 768 ? 6 : 3;
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
   const getPaginatedData = (data: Array<Dependency>): Array<Dependency> => {
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -162,10 +189,11 @@ export default function MainForm() {
     file: Yup.mixed<File>()
       .required("File is required!")
       .test({
-        message: "Invalid format",
+        message: "Invalid format or File",
         test: (file, context) => {
           const extension = file.name.toString().split(".").pop();
-          const isValid = extension === "json";
+          const isPackageJson = file.name.toString().startsWith('package')
+          const isValid = extension === "json" && isPackageJson;
           if (!isValid) context?.createError();
 
           return isValid;
@@ -178,7 +206,7 @@ export default function MainForm() {
       file: undefined,
     },
     validationSchema: mainFormSchema,
-    onSubmit: ({file}) => {
+    onSubmit: ({file}): void => {
       if (!file) return;
 
       const reader = new FileReader();
@@ -186,8 +214,7 @@ export default function MainForm() {
         if (!e.target?.result) return;
 
         const packageJson = e.target.result as string;
-        const {dependencies, devDependencies}: PackageJson =
-          JSON.parse(packageJson);
+        const {dependencies, devDependencies}: PackageJson = JSON.parse(packageJson);
 
         if (!dependencies || !devDependencies) {
           formik.setFieldError('file', "The provided file's content is not in the expected package.json format");
@@ -264,7 +291,9 @@ export default function MainForm() {
                      totalPages={totalPages}
                      setIsTransitioning={setIsTransitioning}
                      isTransitioning={isTransitioning}
-                     itemsPerPage={itemsPerPage}/>
+                     itemsPerPage={itemsPerPage}
+                     searchTerm={searchTerm}
+                     setSearchTerm={setSearchTerm}/>
       ) : (
         <Card className="md:w-[700px] bg-green-700 text-gray-900 py-10 my-auto">
           <CardHeader>
