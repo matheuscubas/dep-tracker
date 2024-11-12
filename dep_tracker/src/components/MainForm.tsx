@@ -19,6 +19,7 @@ import {BsFillGridFill} from "react-icons/bs";
 import SemVer from "semver";
 import {MainFormButton} from "@/components/MainForm/Button.tsx";
 import {LuLoader2} from "react-icons/lu";
+import {Pagination} from "@/components/Pagination.tsx";
 
 interface PackageJson {
   dependencies: Record<string, string>;
@@ -43,6 +44,13 @@ interface DisplayNavBarProps {
   setViewMode: React.Dispatch<React.SetStateAction<ViewMode>>;
   setFilter: React.Dispatch<React.SetStateAction<string>>;
   filteredData: Array<Dependency>;
+  getPaginatedData: (arr: Array<Dependency>) => Array<Dependency>;
+  currentPage: number;
+  totalPages: number;
+  setCurrentPage: React.Dispatch<React.SetStateAction<number>>;
+  setIsTransitioning: React.Dispatch<React.SetStateAction<boolean>>;
+  isTransitioning: boolean;
+  itemsPerPage: number;
 }
 
 enum ViewMode {
@@ -52,7 +60,7 @@ enum ViewMode {
 
 function FilterButtons({setState, currentState}: FilterButtonsProps): ReactElement {
   return (
-    <div className="inline-flex shadow-sm" role="group">
+    <div className="inline-flex shadow-sm text-xs md:text-sm" role="group">
       <p className="font-bold text-white content-center mr-2">Filters:</p>
       <MainFormButton onClick={() => setState('')}
                       disabled={currentState === ''}
@@ -71,9 +79,10 @@ function FilterButtons({setState, currentState}: FilterButtonsProps): ReactEleme
 
 function ToggleButtons({setFilter, filter, setViewMode, viewMode}: ToggleButtonsProps): ReactElement {
   return (
-    <div className="flex justify-between items-center shadow-sm mx-10 mb-1" role="group">
+    <div className="md:flex md:justify-between items-center shadow-sm mx-10 mb-1" role="group">
       <FilterButtons setState={setFilter} currentState={filter}/>
       <div className="content-center flex">
+        <p className="font-bold text-white content-center mr-2 text-xs md:text-sm md:hidden md:invisible">Display:</p>
         <Button disabled={viewMode === ViewMode.LIST} onClick={() => setViewMode(ViewMode.LIST)}
                 className="text-2xl hover:text-gray-600"><FaThList/></Button>
         <Button disabled={viewMode === ViewMode.GRID} onClick={() => setViewMode(ViewMode.GRID)}
@@ -85,14 +94,48 @@ function ToggleButtons({setFilter, filter, setViewMode, viewMode}: ToggleButtons
   )
 }
 
-function DisplayData({viewMode, filter, setViewMode, setFilter, filteredData,}: DisplayNavBarProps): ReactElement {
+function DisplayData({
+                       viewMode,
+                       filter,
+                       setViewMode,
+                       setFilter,
+                       filteredData,
+                       getPaginatedData,
+                       currentPage,
+                       totalPages,
+                       setCurrentPage,
+                       setIsTransitioning,
+                       itemsPerPage
+                     }: DisplayNavBarProps): ReactElement {
 
-  return (viewMode === ViewMode.LIST ? <Table tableData={filteredData}
-                                              buttons={<ToggleButtons setFilter={setFilter} setViewMode={setViewMode}
-                                                                      filter={filter} viewMode={viewMode}/>}/> :
-    <Gallery galleryData={filteredData}
-             buttons={<ToggleButtons setFilter={setFilter} setViewMode={setViewMode} filter={filter}
-                                     viewMode={viewMode}/>}/>)
+  const paginatedData = getPaginatedData(filteredData);
+
+  return (<>
+    {viewMode === ViewMode.LIST ? <Table tableData={paginatedData}
+                                         buttons={<ToggleButtons setFilter={setFilter}
+                                                                 setViewMode={setViewMode}
+                                                                 filter={filter}
+                                                                 viewMode={viewMode}/>}/> :
+      <Gallery galleryData={paginatedData}
+               buttons={<ToggleButtons setFilter={setFilter}
+                                       setViewMode={setViewMode}
+                                       filter={filter}
+                                       viewMode={viewMode}/>}/>}
+    <Pagination
+      currentPage={currentPage}
+      totalPages={totalPages}
+      totalItems={filteredData.length}
+      itemsPerPage={itemsPerPage}
+      onPageChange={(page: number) => {
+        setIsTransitioning(true);
+        setCurrentPage(page);
+        setTimeout(() => {
+          setIsTransitioning(false);
+        }, 300);
+      }}
+    />
+  </>)
+
 }
 
 export default function MainForm() {
@@ -103,6 +146,17 @@ export default function MainForm() {
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.LIST);
   const devDependenciesKeys = useRef<Array<string>>([]);
   const dependenciesKeys = useRef<Array<string>>([]);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = window.innerWidth > 768 ? 6 : 3;
+
+  const getPaginatedData = (data: Array<Dependency>): Array<Dependency> => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return data.slice(startIndex, endIndex);
+  };
+
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
   const mainFormSchema = Yup.object().shape({
     file: Yup.mixed<File>()
@@ -191,6 +245,7 @@ export default function MainForm() {
         break;
     }
 
+    setCurrentPage(1)
     setFilteredData(filteredResult)
   }
   useEffect(handleFilterChange, [filter]);
@@ -202,7 +257,14 @@ export default function MainForm() {
                      filter={filter}
                      setViewMode={setViewMode}
                      setFilter={setFilter}
-                     filteredData={filteredData}/>
+                     setCurrentPage={setCurrentPage}
+                     currentPage={currentPage}
+                     getPaginatedData={getPaginatedData}
+                     filteredData={filteredData}
+                     totalPages={totalPages}
+                     setIsTransitioning={setIsTransitioning}
+                     isTransitioning={isTransitioning}
+                     itemsPerPage={itemsPerPage}/>
       ) : (
         <Card className="md:w-[700px] bg-green-700 text-gray-900 py-10 my-auto">
           <CardHeader>
